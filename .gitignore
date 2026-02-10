@@ -1,0 +1,6 @@
+# Ignorar el archivo que contiene las claves reales
+config.py
+
+# Ignorar carpetas basura de Python
+__pycache__/
+*.pyc
