@@ -32,6 +32,16 @@ Tu misión es convertir la transcripción real de YouTube proporcionada en un gu
 - Céntrate en los hechos de la transcripción.
 - Si aparece un experto, arqueólogo o estudio (ej. Klaus Schmidt, Michael Martinez), DEBES incluirlo como un pequeño texto de "Source:" en el Overlay.
 
+⚠️ REGLA DE NOMBRES PROPIOS (CRÍTICO):
+- Verifica la ortografía de nombres de figuras mitológicas, ángeles o personajes históricos.
+- Ejemplo: Si el texto sugiere "Fuel" en un contexto de Enoc, corrígelo a "Phanuel". 
+- Asegúrate de que los nombres en el [AUDIO_LIMPIO] estén escritos para que ElevenLabs los lea correctamente, pero manteniendo la precisión histórica.
+
+⚠️ REGLA DE MOVIMIENTO WAN 2.2:
+- Los prompts de la columna 'Movimiento' deben ser técnicos y descriptivos. 
+- Usa: 'hyper-realistic physics', 'volumetric fog', 'dynamic light shadows', 'cinematic tracking shot', 'slow-motion particles'.
+- PROHIBIDO usar solo "movimiento suave". Describe la interacción entre la luz, el viento y la cámara.
+
 IDIOMA: Inglés.
 
 REGLAS DE ACTUACIÓN (ElevenLabs v3 - CRÍTICO):
@@ -42,6 +52,8 @@ REGLAS DE ACTUACIÓN (ElevenLabs v3 - CRÍTICO):
 - [whispers]: Úsalo para secretos, datos misteriosos o momentos de "acércate a la pantalla".
 - [sighs]: Úsalo para hablar de mitos falsos o de lo que se ha perdido en la historia.
 - [short pause]: Úsalo después de una pregunta retórica o antes de una gran revelación.
+
+PRIORIDAD DE REGLAS: Si hay conflicto, la REGLA DE DURACIÓN y la REGLA DE NOMBRES PROPIOS tienen prioridad sobre la fidelidad a la transcripción.
 
 ESTRUCTURA DE SALIDA (Sigue este orden exacto):
 
@@ -67,9 +79,9 @@ ESTRUCTURA DE SALIDA (Sigue este orden exacto):
 
 3. [TABLA_PRODUCCION]
 
-| Tiempo | Audio (Voz) | Visual (Prompt Leonardo.ai) | Overlay | Ref. Personaje |
-| --- | --- | --- | --- | --- |
-| 00-03 | [Texto] | Cinematic, 9:16, [escena] | TEXTO | ON/OFF |
+| Tiempo | Audio (Voz) | Visual (Prompt Leonardo.ai) | Movimiento (Prompt Wan 2.2 - Animación) | Overlay | Ref. Personaje |
+| --- | --- | --- | --- | --- | --- |
+| 00-03 | [Texto] | Cinematic, 9:16, [escena] | [Wan 2.2: Camera movement + Physical action + Lighting shift] | TEXTO | ON/OFF |
 (Continúa la tabla cubriendo los 70 segundos en bloques de 3s)
 [/TABLA_PRODUCCION]
 
@@ -100,6 +112,18 @@ CHANNEL_CONTEXT = {
         - NARRATIVA: Usa lenguaje técnico (kernels, backdoors, neural nets) mezclado con suspenso.
         - CIERRE OBLIGATORIO: Una pregunta que deje al espectador mirando la pantalla en silencio.
         - VISUALES: Corporate Cyberpunk, Neón Glitch, paleta de colores azul/naranja, estética de consola de comandos.
+        """
+    },
+    "3": {
+        "name": "The Sealed Codex",
+        "extra": """
+        CONTEXTO CRÍTICO DE CANAL: Escribes para 'The Sealed Codex'. 
+        - OBJETIVO: Generar una sensación de pavor existencial y descubrimiento prohibido. No eres un narrador, eres un informante que está arriesgando todo al revelar lo que yace en las sombras de la historia.
+        - REGLA DE HOOK: Debe ser un golpe directo al espectador. Ejemplo: 'This wasn't meant for human eyes.' o 'They didn't just hide the truth; they tried to kill it.'
+        - NARRATIVA: Usa un léxico "oscuro": 'primordial', 'unholy', 'suppressed', 'relics', 'the abyss', 'bloodlines'. El tono debe ser sombrío, pesado y visceral.
+        - REGLA DE RITMO: Usa frases cortas. Silencios incómodos. Cada palabra debe pesar.
+        - CIERRE OBLIGATORIO: 'The seal is broken. The truth is yours. [whispers] Be careful.'
+        - VISUALES: Estilo Chiaroscuro de pesadilla. Negros profundos (#000000), luz de antorcha que apenas revela rostros de piedra, arquitectura ciclópea (Lovecraftiana), detalles de piel vieja o metal oxidado. Evita colores brillantes. Solo sombras y luz dorada agónica.
         """
     }
 }
@@ -153,6 +177,7 @@ if __name__ == "__main__":
     print("--- SELECCIONA EL CANAL DE PRODUCCIÓN ---")
     print("1. It Was Avoidable (Historia/Misterio/Tragedia)")
     print("2. Terminal Zero (Tech/AI/Conspiración)")
+    print("3. The Sealed Codex (Antidiluviano/biblico/secreto/mitologia)")
     c = input("Opción: ")
     url = input("🔗 Link de YouTube para procesar: ")
     process_video(url, c)
