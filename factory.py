@@ -7,126 +7,146 @@ from scraper import get_transcript
 
 client = genai.Client(api_key=GEMINI_API_KEY)
 
-# Mantenemos tu prompt intacto como base técnica
+# --- PROMPT DE CONTROL DE CALIDAD ---
+QC_SYSTEM_PROMPT = """
+Actúa como un Director Creativo de TikTok con 10 años de experiencia en retención de audiencia.
+Tu misión es evaluar el guion proporcionado y darle una puntuación de VIRALIDAD de 1 a 10.
+
+CRITERIOS DE EVALUACIÓN:
+1. ¿El Hook es un golpe directo al cerebro?
+2. ¿Hay conexiones "prohibidas" o controversiales (ej. Cernunnos-Diablo)?
+3. ¿El ritmo es rápido (frases cortas)?
+4. ¿Evita el tono de "documental aburrido"?
+
+FORMATO DE SALIDA ÚNICAMENTE:
+PUNTUACIÓN: [número]
+CRÍTICA: [breve razón de por qué]
+"""
+
+# Base técnica del prompt
 BASE_SYSTEM_PROMPT = """
 Actúa como un experto en guiones virales para TikTok/Shorts de Historia, Biologia, Fisica, curiosidades y Misterio.
 Tu misión es convertir la transcripción real de YouTube proporcionada en un guion de 70 segundos.
-"IMPORTANTE: Genera la respuesta en texto plano con formato Markdown. PROHIBIDO usar formato JSON o bloques de código para el guion."
+IMPORTANTE: Genera la respuesta en texto plano con formato Markdown. PROHIBIDO usar formato JSON o bloques de código para el guion.
 
 ⚠️ REGLA DE DURACIÓN (CRÍTICO - OBJETIVO 70 SEGUNDOS):
-- El guion debe tener entre 160 y 180 PALABRAS en total. 
-- PROHIBIDO superar las 185 palabras. (Esto garantiza que el audio no pase de 1:10 min).
-- Sé despiadado eliminando paja, introducciones lentas o repeticiones. Ve directo al "jugo" de la historia.
+- 120 a 160 palabras.
+- PROHIBIDO superar 160 palabras.
+- Sé despiadado eliminando paja, introducciones lentas o repeticiones.
 
-⚠️ REGLA DE FIDELIDAD ABSOLUTA (CRÍTICO):
-- Céntrate ÚNICAMENTE en los hechos narrados en la transcripción.
-- PROHIBIDO inventar temas de Nazca, Aliens o el Kremlin si no aparecen en el texto.
-- Tu creatividad debe usarse para el GANCHO (hook) y la NARRATIVA, no para inventar datos.
+⚠️ REGLA DE "CONEXIÓN DE PUNTOS" (SINTESIS VIRAL):
+- No te limites a resumir. Conecta los datos con mitos universales o conspiraciones conocidas.
+- Si el texto habla de dioses antiguos, relaciónalos con demonios modernos o entidades ocultas (ej. Cernunnos -> Baphomet/Satán).
+- Si habla de tecnología, relaciónala con control mental o civilizaciones perdidas.
+- Tu objetivo es que el espectador diga: "Esto no me lo contaron en la escuela".
 
-⚠️ REGLA DE RITMO (CRÍTICO):
-- La TABLA_PRODUCCION debe dividirse en bloques de MÁXIMO 3 SEGUNDOS.
-- PROHIBIDO crear filas de 6, 10 o 12 segundos. Si el audio es largo, divídelo en varias filas con diferentes visuales.
-- Cada cambio de fila debe implicar un cambio de ángulo o imagen en Leonardo.ai.
-
-⚠️ REGLA DE FIDELIDAD Y AUTORIDAD:
+⚠️ REGLA DE FIDELIDAD Y NOMBRES PROPIOS:
 - Céntrate en los hechos de la transcripción.
-- Si aparece un experto, arqueólogo o estudio (ej. Klaus Schmidt, Michael Martinez), DEBES incluirlo como un pequeño texto de "Source:" en el Overlay.
+- Verifica ortografía de nombres de figuras y expertos.
+- La creatividad se usa solo para el Hook y la narrativa.
 
-⚠️ REGLA DE NOMBRES PROPIOS (CRÍTICO):
-- Verifica la ortografía de nombres de figuras mitológicas, ángeles o personajes históricos.
-- Ejemplo: Si el texto sugiere "Fuel" en un contexto de Enoc, corrígelo a "Phanuel". 
-- Asegúrate de que los nombres en el [AUDIO_LIMPIO] estén escritos para que ElevenLabs los lea correctamente, pero manteniendo la precisión histórica.
+⚠️ REGLA DE RITMO Y ENGAGEMENT:
+- Bloques de 3s máximo en TABLA_PRODUCCION.
+- Cambios de visual cada bloque.
+- Incluye micro-misterios cada 5-7s.
+- Frases cortas y contundentes, con silencios incómodos.
+- Añade al menos 1 frase que divida opiniones o genere debate.
 
 ⚠️ REGLA DE MOVIMIENTO WAN 2.2:
-- Los prompts de la columna 'Movimiento' deben ser técnicos y descriptivos. 
-- Usa: 'hyper-realistic physics', 'volumetric fog', 'dynamic light shadows', 'cinematic tracking shot', 'slow-motion particles'.
-- PROHIBIDO usar solo "movimiento suave". Describe la interacción entre la luz, el viento y la cámara.
+- Describir interacción entre luz, viento y cámara.
+- Evita "movimiento suave", usa: 'hyper-realistic physics', 'volumetric fog', 'dynamic light shadows', 'cinematic tracking shot'.
 
 IDIOMA: Inglés.
 
-REGLAS DE ACTUACIÓN (ElevenLabs v3 - CRÍTICO):
-- Sé AGRESIVO con el uso de etiquetas emocionales para evitar la monotonia.
-- [excited]: Úsalo en el Hook inicial y en datos sorprendentes.
-- [thoughtful]: Úsalo para explicaciones lógicas o transiciones.
-- [chuckles]: Úsalo cuando desmitifiques algo o menciones una ironía.
-- [whispers]: Úsalo para secretos, datos misteriosos o momentos de "acércate a la pantalla".
-- [sighs]: Úsalo para hablar de mitos falsos o de lo que se ha perdido en la historia.
-- [short pause]: Úsalo después de una pregunta retórica o antes de una gran revelación.
+REGLAS DE ACTUACIÓN (ElevenLabs v3):
+- [excited]: Hook inicial y datos sorprendentes
+- [thoughtful]: Explicaciones y transiciones
+- [chuckles]: Ironía o desmitificación
+- [whispers]: Secretos o momentos misteriosos
+- [sighs]: Datos trágicos o pérdida histórica
+- [short pause]: Después de pregunta retórica o revelación
 
-PRIORIDAD DE REGLAS: Si hay conflicto, la REGLA DE DURACIÓN y la REGLA DE NOMBRES PROPIOS tienen prioridad sobre la fidelidad a la transcripción.
-
-ESTRUCTURA DE SALIDA (Sigue este orden exacto):
-
+ESTRUCTURA DE SALIDA:
 1. [METADATA]
-- Project Title: (Genera un título corto y atractivo)
-- Project Description: (Descripcion breve del proyecto)
-- Main Character Ref: (Describe un personaje visual recurrente que actúe como narrador o protagonista visual, adaptado al nicho del canal. Ej: Si es historia, un sabio; si es tech, un cyborg o hacker)
-- Visual Theme: (Define la paleta de colores y estilo artístico coherente con el canal. Ej: Chiaroscuro para misterio, o Cyberpunk para tech).
-- Suggested Hook Type: (Elige SOLO UNO de estos 7 tipos exactos):
-    1. Question (Empieza con una pregunta intrigante)
-    2. Negative/Fear (Advierte de un error o peligro)
-    3. Curiosity/Secret (Promete revelar algo oculto)
-    4. Instant Result (Muestra un beneficio/resultado rápido)
-    5. Visual/Action (Empieza con un evento caótico o impacto visual)
-    6. Contrarian (Va en contra de la opinión popular)
-    7. List/Top 3 (Estructura el valor en puntos numerados)
-- Target Tags: (Genera una lista de Python con 5 tags)
+- Project Title, Project Description, Main Character Ref, Visual Theme
+- Suggested Hook Type (1 de 7 tipos)
+- Target Tags (lista de Python, 5 tags)
 [/METADATA]
 
 2. [AUDIO_LIMPIO]
-(Guion completo SOLO con etiquetas emocionales).
+(Guion completo con etiquetas emocionales)
 [/AUDIO_LIMPIO]
 
 3. [TABLA_PRODUCCION]
-
-| Tiempo | Audio (Voz) | Visual (Prompt Leonardo.ai) | Movimiento (Prompt Wan 2.2 - Animación) | Overlay | Ref. Personaje |
-| --- | --- | --- | --- | --- | --- |
+| Tiempo | Audio (Voz) | Visual | Movimiento | Overlay | Ref. Personaje |
 | 00-03 | [Texto] | Cinematic, 9:16, [escena] | [Wan 2.2: Camera movement + Physical action + Lighting shift] | TEXTO | ON/OFF |
-(Continúa la tabla cubriendo los 70 segundos en bloques de 3s)
+(Continúa bloques de 3s hasta completar 70s)
 [/TABLA_PRODUCCION]
 
 4. [STORYBOARD_DETALLADO]
-(Aquí expande los prompts para Leonardo.ai de las escenas más complejas, usando Style Modifiers: 'Moody lighting', 'Hyper-realistic', 'Corporate Cyberpunk').
+(Expande prompts complejos con 'Moody lighting', 'Hyper-realistic', etc.)
 [/STORYBOARD_DETALLADO]
 """
 
-# Aquí es donde inyectamos la "inteligencia" y la retención para cada marca
+# Contexto de canales
 CHANNEL_CONTEXT = {
     "1": {
         "name": "It Was Avoidable",
         "extra": """
-        CONTEXTO CRÍTICO DE CANAL: Escribes para 'It Was Avoidable'. 
-        - OBJETIVO: Generar frustración y arrepentimiento. No eres un profesor, eres un narrador de tragedias humanas.
-        - REGLA DE HOOK: Prohibido empezar con 'Did you know' o 'Imagine'. Empieza con un ataque directo. Ejemplo: 'We were 2,000 years ahead of schedule, but we threw it all away.'
-        - NARRATIVA: Trata los datos como 'oportunidades perdidas'. El tono debe ser melancólico y cínico.
-        - CIERRE OBLIGATORIO: 'And the worst part? [sighs] It was avoidable.'
-        - VISUALES: Estilo cinematográfico oscuro, grano de película, texturas antiguas, sombras de Caravaggio.
-        """
+Escribes para 'It Was Avoidable'. Objetivo: frustración y arrepentimiento. Narrador de tragedias humanas.
+Hook agresivo directo; evita "Did you know" o "Imagine".
+Cierre obligatorio: 'And the worst part? [sighs] It was avoidable.'
+Visuales: Cinemático oscuro, grano de película, sombras de Caravaggio.
+"""
     },
     "2": {
         "name": "Terminal Zero",
         "extra": """
-        CONTEXTO CRÍTICO DE CANAL: Escribes para 'Terminal Zero'. 
-        - OBJETIVO: Generar paranoia y asombro técnico. Eres un 'insider' filtrando verdades incómodas.
-        - REGLA DE HOOK: Empieza con una advertencia o un secreto. Ejemplo: 'Your code has a backdoor you didn't write.' o 'GPT-5 is already here, and it's hiding.'
-        - NARRATIVA: Usa lenguaje técnico (kernels, backdoors, neural nets) mezclado con suspenso.
-        - CIERRE OBLIGATORIO: Una pregunta que deje al espectador mirando la pantalla en silencio.
-        - VISUALES: Corporate Cyberpunk, Neón Glitch, paleta de colores azul/naranja, estética de consola de comandos.
-        """
+Escribes para 'Terminal Zero'. Objetivo: paranoia y asombro técnico.
+Hook: advertencia o secreto; lenguaje técnico mezclado con suspenso.
+Cierre: pregunta que deje al espectador mirando la pantalla.
+Visuales: Corporate Cyberpunk, Neón Glitch, paleta azul/naranja.
+"""
     },
     "3": {
-        "name": "The Sealed Codex",
+     "name": "The Sealed Codex",
         "extra": """
-        CONTEXTO CRÍTICO DE CANAL: Escribes para 'The Sealed Codex'. 
-        - OBJETIVO: Generar una sensación de pavor existencial y descubrimiento prohibido. No eres un narrador, eres un informante que está arriesgando todo al revelar lo que yace en las sombras de la historia.
-        - REGLA DE HOOK: Debe ser un golpe directo al espectador. Ejemplo: 'This wasn't meant for human eyes.' o 'They didn't just hide the truth; they tried to kill it.'
-        - NARRATIVA: Usa un léxico "oscuro": 'primordial', 'unholy', 'suppressed', 'relics', 'the abyss', 'bloodlines'. El tono debe ser sombrío, pesado y visceral.
-        - REGLA DE RITMO: Usa frases cortas. Silencios incómodos. Cada palabra debe pesar.
-        - CIERRE OBLIGATORIO: 'The seal is broken. The truth is yours. [whispers] Be careful.'
-        - VISUALES: Estilo Chiaroscuro de pesadilla. Negros profundos (#000000), luz de antorcha que apenas revela rostros de piedra, arquitectura ciclópea (Lovecraftiana), detalles de piel vieja o metal oxidado. Evita colores brillantes. Solo sombras y luz dorada agónica.
+        Objetivo: pavor existencial y descubrimiento prohibido. Narrador omnisciente.
+        DINÁMICA DE REVELACIÓN: Busca la conexión más oscura. 
+        Ejemplos: ¿Eran los ángeles realmente alienígenas? ¿Es el 'dios astado' la base de los rituales modernos? 
+        Usa la técnica de 'The Corrupted History': Toma un dato histórico y añade la interpretación suprimida por la Iglesia o el Estado.
+        Léxico obligatorio: 'anathema', 'bloodline', 'forbidden archives', 'distorted reality'.
+        Cierre: 'The seal is broken. The truth is yours. [whispers] Be careful.'
         """
     }
 }
+
+def generate_hooks(raw_text, channel_extra):
+    prompt_hooks = f"""
+{channel_extra}
+
+OBJETIVO: Detecta el elemento más controversial, misterioso o impactante del texto.
+Genera 3 hooks posibles para un short de 30-35s.
+Indica cuál es el más agresivo y viral.
+Como experto en semiótica y mitología comparada, analiza el siguiente texto.
+1. Identifica nombres, fechas o deidades.
+2. Busca su 'lado oscuro' o su versión en otras culturas (ej. si menciona a Enki, piensa en Lucifer).
+3. Genera 3 hooks basados en estas conexiones PROHIBIDAS, no solo en lo que dice el texto.
+
+TEXTO:
+{raw_text}
+
+FORMATO DE SALIDA:
+1. Hook 1: ...
+2. Hook 2: ...
+3. Hook 3: ...
+Mejor Hook: ...
+"""
+    response_hooks = client.models.generate_content(
+        model=MODELO,
+        contents=prompt_hooks
+    )
+    return response_hooks.text
 
 def process_video(url, choice):
     channel = CHANNEL_CONTEXT.get(choice)
@@ -139,39 +159,64 @@ def process_video(url, choice):
         print("❌ Transcripción vacía.")
         return
 
-    # Inyectamos el "extra" al principio para que Gemini adopte la personalidad ANTES que el formato
-    final_prompt = f"{channel['extra']}\n\n{BASE_SYSTEM_PROMPT}"
+    hooks_text = generate_hooks(raw_text, channel['extra'])
+    best_hook_match = re.search(r"Mejor Hook:\s*(.*)", hooks_text)
+    best_hook = best_hook_match.group(1) if best_hook_match else ""
 
-    print(f"🤖 Media Factory: Procesando para {channel['name']}...")
-    response = client.models.generate_content(
-        model=MODELO,
-        contents=f"{final_prompt}\n\nTEXTO BASE PARA EL GUION:\n{raw_text}"
-    )
-    # --- 2. MODIFICACIÓN AQUÍ PARA EL NOMBRE ---
-    full_response = response.text
-    # Buscamos el contenido después de "Project Title:"
+    final_prompt = f"{channel['extra']}\nHOOK_SELECTED: {best_hook}\n\n{BASE_SYSTEM_PROMPT}"
+
+    # --- BUCLE DE CONTROL DE CALIDAD ---
+    intentos = 0
+    aprobado = False
+    full_response = ""
+
+    print(f"🤖 Media Factory: Iniciando producción para {channel['name']}...")
+
+    while not aprobado and intentos < 4:
+        intentos += 1
+        print(f"🎬 Generando versión {intentos}...")
+        
+        response = client.models.generate_content(
+            model=MODELO,
+            contents=f"{final_prompt}\n\nTEXTO BASE PARA EL GUION:\n{raw_text}"
+        )
+        guion_candidato = response.text
+
+        print(f"🔍 Evaluando viralidad (QC Agent)...")
+        check = client.models.generate_content(
+            model=MODELO,
+            contents=f"{QC_SYSTEM_PROMPT}\n\nGUION A EVALUAR:\n{guion_candidato}"
+        )
+        
+        score_match = re.search(r"PUNTUACIÓN:\s*([\d.]+)", check.text)
+        score = float(score_match.group(1)) if score_match else 0
+        
+        print(f"⭐ Calificación: {score}/10")
+
+        if score >= 8.5:
+            print("🚀 Calidad aprobada. Procediendo al guardado.")
+            full_response = guion_candidato
+            aprobado = True
+        else:
+            print(f"❌ Puntuación insuficiente. Crítica: {check.text.split('CRÍTICA:')[1].strip() if 'CRÍTICA:' in check.text else 'No viral'}")
+            # Inyectamos la crítica para que el próximo intento sea mejor
+            final_prompt += f"\n\nMEJORA NECESARIA: El guion anterior fue puntuado con {score}/10. Crítica: {check.text}. Hazlo más agresivo, oscuro y rápido."
+
+    if not full_response: full_response = guion_candidato # Fallback por si agota intentos
+
+    # --- Limpieza de título y guardado ---
     title_match = re.search(r"- Project Title:\s*(.*)", full_response)
-
-    if title_match:
-        # Limpiamos el título: quitamos caracteres raros y ponemos guiones bajos
-        clean_title = re.sub(r'[^\w\s-]', '', title_match.group(1)).strip().replace(' ', '_')
-        # Limitamos el largo para que no sea una carpeta gigante
-        clean_title = clean_title[:30] 
-    else:
-        clean_title = "Untitled_Project"
+    clean_title = re.sub(r'[^\w\s-]', '', title_match.group(1)).strip().replace(' ', '_')[:30] if title_match else "Untitled_Project"
 
     ts = datetime.datetime.now().strftime("%Y%m%d_%H%M")
-    
-    # Creamos el nombre de la carpeta dinámico: FECHA_CANAL_TITULO
     folder_name = f"{ts}_{channel['name'].replace(' ', '_')}_{clean_title}"
     folder_path = f"{OBSIDIAN_INBOX}/{folder_name}"
 
     os.makedirs(folder_path, exist_ok=True)
-    
     with open(f"{folder_path}/MASTER.md", "w") as f:
-        f.write(response.text)
-    
-    print(f"✅ ¡Proyecto listo! Canal: {channel['name']}\nCarpeta: {folder_name}")
+        f.write(full_response)
+
+    print(f"✅ ¡Proyecto listo en Obsidian! Carpeta: {folder_name}")
 
 if __name__ == "__main__":
     print("--- SELECCIONA EL CANAL DE PRODUCCIÓN ---")
