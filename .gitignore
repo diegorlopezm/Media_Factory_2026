@@ -4,3 +4,27 @@ config.py
 # Ignorar carpetas basura de Python
 __pycache__/
 *.pyc
+
+# Entorno virtual
+venv/
+
+# Archivos temporales de descarga y subs
+temp_*
+-.en.vtt
+*.vtt
+*.mp3
+*.mp4
+
+# Logs y Debug
+debug_output*
+test_write.txt
+*.txt
+
+# Configuración sensible
+config.py
+
+#misc
+Ayuda Tecnica Factory.py.md
+debug_ffmpeg.py
+venv
+.gitignore
