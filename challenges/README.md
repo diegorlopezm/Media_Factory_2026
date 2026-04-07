@@ -1,4 +1,4 @@
-# 🚀 Python Daily Sprint: Media Factory 2026
+#Python Daily Sprint: Media Factory 2026
 
 Repositorio de micro-proyectos y retos diarios de ingeniería para la optimización del pipeline de entrenamiento de IAs (Flux.1, VisionCurator).
 
@@ -11,7 +11,7 @@ Repositorio de micro-proyectos y retos diarios de ingeniería para la optimizaci
 
 ---
 
-## 🛠️ Detalles de Implementación
+##Detalles de Implementación
 
 ### Reto 01: StatsManager (26/02/2026)
 **Problema:** El conteo de personajes en el dataset era manual e inconsistente debido a falsos positivos ("no characters").
@@ -24,7 +24,7 @@ Repositorio de micro-proyectos y retos diarios de ingeniería para la optimizaci
 
 ---
 
-## 📂 Cómo ejecutar
+##Cómo ejecutar
 Para correr cualquier reto, asegúrate de estar en la raíz de la carpeta `Scripts` y usa:
 ```bash
 python challenges/challenge_stats.py
