@@ -1,4 +1,4 @@
-# 🎥 MediaFactory 2026: Autonomous Content Infrastructure
+# MediaFactory 2026: Autonomous Content Infrastructure
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue.svg) 
 ![OS](https://img.shields.io/badge/OS-Fedora%20Linux-red.svg) 
@@ -24,7 +24,7 @@
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
 The ecosystem is built as a scalable MLOps pipeline, managed through **Agile methodologies** and hosted on a hybrid local/cloud infrastructure.
 
@@ -41,7 +41,7 @@ A modular framework for narrative-driven video production (61-63s format).
 
 ---
 
-## 🛠️ Infrastructure & Tech Stack
+## Infrastructure & Tech Stack
 
 | Layer | Technologies |
 | :--- | :--- |
@@ -54,7 +54,7 @@ A modular framework for narrative-driven video production (61-63s format).
 
 ---
 
-## 📂 Core Modular Structure
+## Core Modular Structure
 
 ```bash
 ├── main.py                # VisionCurator Orchestrator
@@ -68,7 +68,7 @@ A modular framework for narrative-driven video production (61-63s format).
 └── scraper.py             # System-level utilities (yt-dlp + Whisper)
 
 ```
-🐍 Engineering Standards
+Engineering Standards
 
     OOP & Encapsulation: Logic is isolated within specialized classes to maintain a clean global namespace.
 
@@ -81,7 +81,7 @@ A modular framework for narrative-driven video production (61-63s format).
 
 <img width="2344" height="1313" alt="imagen" src="https://github.com/user-attachments/assets/a45de127-f135-4515-81dc-bb2fc7975ac2" />
 
-🚀 Deployment
+Deployment
 
 This system utilizes a Dual-Boot (Fedora/Windows 11) environment for specialized tasks (Audio vs. Dev) and scales to the cloud via RunPod for heavy model training (LoRA/Flux), ensuring cost-effective high-performance computing.
 
